@@ -3,13 +3,20 @@
   
   <main class="main-content">
     <div class="content-container">
-      <h1>Welcome to Backoffice</h1>
-      <p class="subtitle">You are successfully logged in.</p>
-      
-      <div class="placeholder-card">
-        <h2>Main Content Area</h2>
-        <p>This is a placeholder for your dashboard content. Add forms, tables, and CRUD features here.</p>
+      <div class="page-header">
+        <p class="welcome-text">Uspješno ste ulogirani.</p>
+        <button class="create-trip-btn" (click)="toggleForm()">
+          @if (isFormVisible) {
+            <span>Odustani</span>
+          } @else {
+            <span>Kreiraj izlet</span>
+          }
+        </button>
       </div>
+
+      @if (isFormVisible) {
+        <app-trip-form />
+      }
     </div>
   </main>
 </div>

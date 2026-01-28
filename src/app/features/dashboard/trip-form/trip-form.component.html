@@ -1,0 +1,173 @@
+<div class="trip-form-container">
+  <h2>Kreiraj novi izlet</h2>
+
+  <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
+    <!-- Trip Type -->
+    <div class="form-section">
+      <label class="section-label">Tip izleta</label>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" formControlName="tripType" value="single-day" />
+          <span>Jednodnevni izlet</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" formControlName="tripType" value="multi-day" />
+          <span>Višednevni izlet</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Date Selection -->
+    <div class="form-section">
+      @if (isSingleDay) {
+        <div class="form-group">
+          <label for="tripDate">Datum izleta</label>
+          <input type="date" id="tripDate" formControlName="tripDate" />
+        </div>
+      } @else {
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startDate">Početni datum</label>
+            <input type="date" id="startDate" formControlName="startDate" />
+          </div>
+          <div class="form-group">
+            <label for="endDate">Završni datum</label>
+            <input type="date" id="endDate" formControlName="endDate" />
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Trip Name -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="tripName">Naziv izleta</label>
+        <input type="text" id="tripName" formControlName="tripName" placeholder="Unesite naziv izleta" />
+      </div>
+    </div>
+
+    <!-- Departure -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="departure">Polazak</label>
+        <input type="text" id="departure" formControlName="departure" 
+               placeholder="Subota, 06.06.2026 u 01:30 parking kod groblja" />
+      </div>
+    </div>
+
+    <!-- Section & Transport -->
+    <div class="form-section">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="section">Sekcija</label>
+          <select id="section" formControlName="section">
+            <option value="">Odaberite sekciju</option>
+            @for (section of sections; track section) {
+              <option [value]="section">{{ section }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="transport">Prijevoz</label>
+          <select id="transport" formControlName="transport">
+            <option value="">Odaberite način prijevoza</option>
+            @for (transport of transportMethods; track transport) {
+              <option [value]="transport">{{ transport }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Difficulty Levels -->
+    <div class="form-section">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="fitnessDifficulty">Kondicijska zahtjevnost</label>
+          <select id="fitnessDifficulty" formControlName="fitnessDifficulty">
+            <option value="">Odaberite razinu kondicijske zahtjevnosti</option>
+            @for (diff of fitnessDifficulties; track diff.value) {
+              <option [value]="diff.value">{{ diff.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="technicalDifficulty">Tehnička zahtjevnost</label>
+          <select id="technicalDifficulty" formControlName="technicalDifficulty">
+            <option value="">Odaberite razinu tehničke zahtjevnosti</option>
+            @for (diff of technicalDifficulties; track diff.value) {
+              <option [value]="diff.value">{{ diff.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="form-section">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="memberPrice">Cijena za članove (€)</label>
+          <input type="number" id="memberPrice" formControlName="memberPrice" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="nonMemberPrice">Cijena za ostale sudionike (€)</label>
+          <input type="number" id="nonMemberPrice" formControlName="nonMemberPrice" min="0" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Food -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="food">Hrana i piće</label>
+        <input type="text" id="food" formControlName="food" 
+               placeholder="Hranu i piće osiguravate sami iz vlastitog ruksaka" />
+      </div>
+    </div>
+
+    <!-- Return Info -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="returnInfo">Povratak</label>
+        <input type="text" id="returnInfo" formControlName="returnInfo" 
+               placeholder="Povratak u kasnim večernjim satima" />
+      </div>
+    </div>
+
+    <!-- Description (Single-day) -->
+    @if (isSingleDay) {
+      <div class="form-section">
+        <div class="form-group">
+          <label for="description">Opis izleta</label>
+          <textarea id="description" formControlName="description" rows="6"
+                    placeholder="Kratki opis izleta..."></textarea>
+        </div>
+      </div>
+    }
+
+    <!-- Day Descriptions (Multi-day) -->
+    @if (isMultiDay && dayDescriptions.length > 0) {
+      <div class="form-section day-descriptions">
+        <label class="section-label">Opis izleta dan po dan</label>
+        <div class="day-tabs" formArrayName="dayDescriptions">
+          @for (day of dayDescriptions.controls; track $index; let i = $index) {
+            <div class="day-card" [formGroupName]="i">
+              <div class="day-header">
+                <span class="day-number">Dan {{ i + 1 }}</span>
+                <span class="day-date">{{ formatDate(day.get('date')?.value) }}</span>
+              </div>
+              <textarea formControlName="description" rows="4"
+                        placeholder="Opis aktivnosti na danu {{ i + 1 }}..."></textarea>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Submit -->
+    <div class="form-actions">
+      <button type="submit" class="submit-btn">Kreiraj izlet</button>
+    </div>
+  </form>
+</div>
