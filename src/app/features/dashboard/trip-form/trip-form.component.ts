@@ -13,6 +13,7 @@ import {
 import { Guide } from '../../../core/models/guide.model';
 import { GuideService } from '../../../core/services/guide.service';
 import { MultiInputComponent, MultiInputItem } from '../../../shared/components/multi-input/multi-input.component';
+import { PdfService } from '../../../core/services/pdf.service';
 
 @Component({
   selector: 'app-trip-form',
@@ -36,7 +37,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private guideService: GuideService
+    private guideService: GuideService,
+    private pdfService: PdfService
   ) {}
 
   ngOnInit(): void {
@@ -223,5 +225,18 @@ export class TripFormComponent implements OnInit, OnDestroy {
     }
 
     console.log('Trip JSON:', JSON.stringify(trip, null, 2));
+  }
+
+  async onPreviewPdf(): Promise<void> {
+    const formValue = this.tripForm.value;
+    const guides = await this.guideService.getGuidesByIds(formValue.guides);
+    
+    const trip: Trip = {
+      ...formValue,
+      dayDescriptions: this.isMultiDay ? formValue.dayDescriptions : undefined,
+      description: this.isSingleDay ? formValue.description : undefined
+    };
+
+    await this.pdfService.generateTripPdf(trip, guides);
   }
 }

@@ -152,21 +152,21 @@
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 
-  .submit-btn {
-    background: #495c98;
-    color: white;
+  .submit-btn, .preview-btn {
     border: none;
     padding: 0.875rem 2rem;
     border-radius: 8px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s, background 0.2s;
 
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(73, 92, 152, 0.4);
     }
 
     &:active:not(:disabled) {
@@ -176,6 +176,26 @@
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+  }
+
+  .submit-btn {
+    background: #495c98;
+    color: white;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 12px rgba(73, 92, 152, 0.4);
+    }
+  }
+
+  .preview-btn {
+    background: white;
+    color: #495c98;
+    border: 2px solid #495c98;
+
+    &:hover:not(:disabled) {
+      background: #f0f2f8;
+      box-shadow: 0 4px 12px rgba(73, 92, 152, 0.1);
     }
   }
 }

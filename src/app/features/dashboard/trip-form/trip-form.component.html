@@ -188,7 +188,12 @@
 
     <!-- Submit -->
     <div class="form-actions">
-      <button type="submit" class="submit-btn" [disabled]="tripForm.invalid">Kreiraj izlet</button>
+      <button type="button" class="preview-btn" (click)="onPreviewPdf()">
+        Pregled PDF-a
+      </button>
+      <button type="submit" class="submit-btn" [disabled]="tripForm.invalid">
+        Kreiraj izlet
+      </button>
     </div>
   </form>
 </div>
