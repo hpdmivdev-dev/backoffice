@@ -1,0 +1,17 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="navbar-brand">
+      <img src="/logo.png" alt="Logo" class="navbar-logo" />
+      <span class="brand-text">Backoffice</span>
+    </div>
+
+    <div class="navbar-actions">
+      @if (userEmail) {
+        <span class="user-email">{{ userEmail }}</span>
+      }
+      <button class="logout-button" (click)="logout()">
+        Logout
+      </button>
+    </div>
+  </div>
+</nav>
