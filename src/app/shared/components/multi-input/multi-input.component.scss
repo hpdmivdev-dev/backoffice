@@ -1,0 +1,140 @@
+.multi-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.multi-input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.selection-box {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: #495c98;
+    box-shadow: 0 0 0 3px rgba(73, 92, 152, 0.15);
+  }
+}
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #e8ecf4;
+  color: #495c98;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      color: #dc2626;
+    }
+  }
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  input {
+    border: none;
+    outline: none;
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.9375rem;
+    background: transparent;
+
+    &::placeholder {
+      color: #aaa;
+    }
+  }
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+
+  &.no-results {
+    color: #888;
+    cursor: default;
+    justify-content: center;
+  }
+
+  .item-main {
+    font-weight: 500;
+  }
+
+  .item-sub {
+    font-size: 0.75rem;
+    color: #888;
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #495c98;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  position: absolute;
+  right: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

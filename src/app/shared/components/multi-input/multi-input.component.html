@@ -1,0 +1,52 @@
+<div class="multi-input-container">
+  @if (label) {
+    <label class="multi-input-label">{{ label }}</label>
+  }
+
+  <div class="selection-box">
+    @if (selectedItems().length > 0) {
+      <div class="chips-container">
+        @for (item of selectedItems(); track item.id) {
+          <div class="chip">
+            <span class="chip-label">{{ item.label }}</span>
+            <button type="button" class="remove-btn" (click)="removeItem(item)">✕</button>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="input-wrapper">
+      <input
+        #searchInput
+        type="text"
+        [placeholder]="placeholder"
+        [value]="searchTerm"
+        (input)="onInput($event)"
+        (keydown)="onKeyDown($event)"
+        (blur)="hideDropdown()"
+        autocomplete="off"
+      />
+      
+      @if (isSearching) {
+        <span class="spinner"></span>
+      }
+    </div>
+
+    @if (showDropdown() && (searchResults.length > 0 || searchTerm.length >= 2)) {
+      <div class="dropdown">
+        @if (searchResults.length > 0) {
+          @for (item of searchResults; track item.id) {
+            <div class="dropdown-item" (mousedown)="selectItem(item)">
+              <div class="item-main">{{ item.label }}</div>
+              @if (item.subLabel) {
+                <div class="item-sub">{{ item.subLabel }}</div>
+              }
+            </div>
+          }
+        } @else if (searchTerm.length >= 2) {
+          <div class="dropdown-item no-results">Nema rezultata</div>
+        }
+      </div>
+    }
+  </div>
+</div>

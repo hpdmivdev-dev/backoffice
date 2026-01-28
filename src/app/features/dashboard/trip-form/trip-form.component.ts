@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   Trip,
   TripType,
@@ -10,11 +10,14 @@ import {
   FITNESS_DIFFICULTIES,
   TECHNICAL_DIFFICULTIES
 } from '../../../core/models/trip.model';
+import { Guide } from '../../../core/models/guide.model';
+import { GuideService } from '../../../core/services/guide.service';
+import { MultiInputComponent, MultiInputItem } from '../../../shared/components/multi-input/multi-input.component';
 
 @Component({
   selector: 'app-trip-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MultiInputComponent],
   templateUrl: './trip-form.component.html',
   styleUrl: './trip-form.component.scss'
 })
@@ -22,12 +25,19 @@ export class TripFormComponent implements OnInit, OnDestroy {
   tripForm!: FormGroup;
   private destroy$ = new Subject<void>();
 
+  // Guide autocomplete data for MultiInput
+  guideSearchResults: MultiInputItem[] = [];
+  isSearchingGuides = false;
+
   readonly sections = SECTIONS;
   readonly transportMethods = TRANSPORT_METHODS;
   readonly fitnessDifficulties = FITNESS_DIFFICULTIES;
   readonly technicalDifficulties = TECHNICAL_DIFFICULTIES;
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private guideService: GuideService
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -47,6 +57,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
       startDate: [''],
       endDate: [''],
       tripName: ['', Validators.required],
+      guides: [[]],
       departure: ['', Validators.required],
       section: ['', Validators.required],
       transport: ['', Validators.required],
@@ -57,7 +68,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
       food: ['', Validators.required],
       returnInfo: ['', Validators.required],
       description: [''],
-      dayDescriptions: this.fb.array([])
+      dayDescriptions: this.fb.array([]),
+      notes: ['']
     });
   }
 
@@ -82,6 +94,29 @@ export class TripFormComponent implements OnInit, OnDestroy {
     this.tripForm.get('endDate')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateDayDescriptions());
+  }
+
+  async onGuideSearch(term: string): Promise<void> {
+    if (term.length < 2) {
+      this.guideSearchResults = [];
+      return;
+    }
+
+    this.isSearchingGuides = true;
+    const results = await this.guideService.searchGuides(term);
+    
+    // Map to MultiInputItem
+    const selectedIds = this.tripForm.get('guides')?.value as string[];
+    this.guideSearchResults = results
+      .filter(g => !selectedIds.includes(g.id))
+      .map(g => ({
+        id: g.id,
+        label: `${g.first_name} ${g.last_name}`,
+        subLabel: g.category,
+        originalItem: g
+      }));
+    
+    this.isSearchingGuides = false;
   }
 
   get isSingleDay(): boolean {
@@ -128,7 +163,6 @@ export class TripFormComponent implements OnInit, OnDestroy {
       current.setDate(current.getDate() + 1);
     }
 
-    // Preserve existing descriptions if possible
     const existingDescriptions = this.dayDescriptions.controls.map(c => ({
       date: c.get('date')?.value,
       description: c.get('description')?.value
@@ -148,7 +182,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
 
   formatDate(dateStr: string): string {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-GB', {
+    return date.toLocaleDateString('hr-HR', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
@@ -166,6 +200,7 @@ export class TripFormComponent implements OnInit, OnDestroy {
     const trip: Trip = {
       tripType: formValue.tripType,
       tripName: formValue.tripName,
+      guides: formValue.guides,
       departure: formValue.departure,
       section: formValue.section,
       transport: formValue.transport,
@@ -174,7 +209,8 @@ export class TripFormComponent implements OnInit, OnDestroy {
       memberPrice: formValue.memberPrice,
       nonMemberPrice: formValue.nonMemberPrice,
       food: formValue.food,
-      returnInfo: formValue.returnInfo
+      returnInfo: formValue.returnInfo,
+      notes: formValue.notes || undefined
     };
 
     if (formValue.tripType === 'single-day') {

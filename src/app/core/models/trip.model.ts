@@ -11,6 +11,7 @@ export interface Trip {
   startDate?: string;
   endDate?: string;
   tripName: string;
+  guides: string[];
   departure: string;
   section: string;
   transport: string;
@@ -22,6 +23,7 @@ export interface Trip {
   returnInfo: string;
   description?: string;
   dayDescriptions?: DayDescription[];
+  notes?: string;
 }
 
 export const SECTIONS = [

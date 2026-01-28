@@ -46,6 +46,18 @@
       </div>
     </div>
 
+    <!-- Guides Selection (MultiInput) -->
+    <div class="form-section">
+      <app-multi-input
+        formControlName="guides"
+        label="Vodiči"
+        placeholder="Pretražite i unesite vodiče (npr. VALENTINA)..."
+        [searchResults]="guideSearchResults"
+        [isSearching]="isSearchingGuides"
+        (search)="onGuideSearch($event)"
+      ></app-multi-input>
+    </div>
+
     <!-- Departure -->
     <div class="form-section">
       <div class="form-group">
@@ -85,7 +97,7 @@
         <div class="form-group">
           <label for="fitnessDifficulty">Kondicijska zahtjevnost</label>
           <select id="fitnessDifficulty" formControlName="fitnessDifficulty">
-            <option value="">Odaberite razinu kondicijske zahtjevnosti</option>
+            <option value="">Odaberite razinu...</option>
             @for (diff of fitnessDifficulties; track diff.value) {
               <option [value]="diff.value">{{ diff.label }}</option>
             }
@@ -94,7 +106,7 @@
         <div class="form-group">
           <label for="technicalDifficulty">Tehnička zahtjevnost</label>
           <select id="technicalDifficulty" formControlName="technicalDifficulty">
-            <option value="">Odaberite razinu tehničke zahtjevnosti</option>
+            <option value="">Odaberite razinu...</option>
             @for (diff of technicalDifficulties; track diff.value) {
               <option [value]="diff.value">{{ diff.label }}</option>
             }
@@ -165,9 +177,18 @@
       </div>
     }
 
+    <!-- Notes -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="notes">Napomena</label>
+        <textarea id="notes" formControlName="notes" rows="3"
+                  placeholder="Dodatne napomene za izlet..."></textarea>
+      </div>
+    </div>
+
     <!-- Submit -->
     <div class="form-actions">
-      <button type="submit" class="submit-btn">Kreiraj izlet</button>
+      <button type="submit" class="submit-btn" [disabled]="tripForm.invalid">Kreiraj izlet</button>
     </div>
   </form>
 </div>
