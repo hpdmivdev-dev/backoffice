@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Trip } from '../models/trip.model';
 import { Guide } from '../models/guide.model';
 
@@ -11,124 +12,160 @@ export class PdfService {
   constructor() { }
 
   async generateTripPdf(trip: Trip, guides: Guide[]): Promise<void> {
-    const doc = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4'
-    });
+    // Create a hidden container for the PDF content to ensure 100% correct font rendering
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '210mm'; // A4 width
+    container.style.padding = '20mm';
+    container.style.backgroundColor = '#ffffff';
+    container.style.color = '#333333';
+    container.style.fontFamily = "'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+    container.style.boxSizing = 'border-box';
 
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let currentY = 20;
+    // Build the HTML structure
+    container.innerHTML = `
+      <style>
+        .pdf-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .logo-box { width: 120px; }
+        .logo-box img { width: 100%; }
+        .section-name { font-size: 18pt; font-weight: bold; text-transform: uppercase; text-align: right; color: #495c98; }
+        
+        .trip-title { font-size: 22pt; font-weight: bold; text-align: center; margin: 40px 0; line-height: 1.3; }
+        
+        .info-row { margin-bottom: 12px; font-size: 12pt; line-height: 1.5; }
+        .info-label { font-weight: bold; text-transform: uppercase; margin-right: 5px; }
+        
+        .price-section { margin: 20px 0; }
+        .price-item { margin-left: 20px; margin-top: 5px; font-style: italic; }
+        
+        .content-section { margin-top: 30px; }
+        .section-header { font-size: 14pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 15px; }
+        .description-text { font-size: 11pt; line-height: 1.6; white-space: pre-wrap; }
+        
+        .day-prog { margin-bottom: 20px; }
+        .day-title { font-weight: bold; color: #495c98; margin-bottom: 8px; }
+        .day-desc { margin-left: 10px; padding-left: 10px; border-left: 2px solid #eef0f5; }
 
-    // Load Logo
+        .note-red { color: #dc2626; font-weight: bold; margin-top: 25px; font-size: 12pt; }
+        
+        .contact-box { margin-top: 50px; padding-top: 20px; border-top: 2px solid #444; }
+        .contact-title { font-size: 13pt; font-weight: bold; text-decoration: underline; margin-bottom: 15px; }
+        .contact-item { display: grid; grid-template-columns: 200px 1fr 150px; margin-bottom: 8px; font-size: 11pt; }
+        .contact-email { color: #2563eb; }
+      </style>
+
+      <div class="pdf-header">
+        <div class="logo-box">
+          <img src="/logo.png" />
+          <div style="font-weight: bold; font-size: 10pt; margin-top: 5px;">HPD MIV VARAŽDIN</div>
+        </div>
+        <div class="section-name">${trip.section}</div>
+      </div>
+
+      <div class="trip-title">
+        Program izleta u ${trip.tripName}
+        <br>
+        <span style="font-size: 16pt;">${this.getTripDateRange(trip)}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Kondicijska zahtjevnost:</span>
+        <span>${this.getFitnessLabel(trip.fitnessDifficulty)}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tehnička zahtjevnost:</span>
+        <span>${this.getTechnicalLabel(trip.technicalDifficulty)}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Polazak:</span>
+        <span>${trip.departure}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Prijevoz:</span>
+        <span>${trip.transport}</span>
+      </div>
+
+      <div class="content-section">
+        <div class="section-header">Cijena</div>
+        <div class="price-item">- Članovi HPD „MIV“ Varaždin: <b>${trip.memberPrice}€</b></div>
+        <div class="price-item">- Planinari, članovi drugih društava: <b>${trip.nonMemberPrice}€</b></div>
+      </div>
+
+      <div class="content-section">
+        <div class="section-header">Opis planinarske staze</div>
+        <div class="description-text">
+          ${this.renderTripDescription(trip)}
+        </div>
+      </div>
+
+      <div class="info-row" style="margin-top: 30px;">
+        <span class="info-label">Povratak:</span>
+        <span>${trip.returnInfo}</span>
+      </div>
+
+      ${trip.notes ? `<div class="note-red">NAPOMENA: <span style="font-weight: normal; color: #333;">${trip.notes}</span></div>` : ''}
+
+      <div class="contact-box">
+        <div class="contact-title">Kontakt osobe:</div>
+        ${guides.map(g => `
+          <div class="contact-item">
+            <span style="font-weight: bold;">${g.first_name} ${g.last_name}</span>
+            <span class="contact-email">${g.email}</span>
+            <span style="text-align: right;">${g.phone || '-'}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    document.body.appendChild(container);
+
     try {
-      const logoBase64 = await this.getBase64Image('/logo.png');
-      doc.addImage(logoBase64, 'PNG', margin, currentY, 40, 40);
-      currentY += 45;
-    } catch (e) {
-      console.error('Could not load logo for PDF', e);
-      currentY += 10;
-    }
-
-    // Header Left: HPD MIV VARAŽDIN + Section
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('HPD MIV VARAŽDIN', margin, currentY);
-    currentY += 7;
-    doc.setFontSize(12);
-    doc.text(trip.section.toUpperCase(), margin, currentY);
-
-    // Header Right: Vodiči
-    const rightAlignX = pageWidth - margin;
-    let guideY = 25;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Vodiči:', rightAlignX, guideY, { align: 'right' });
-    guideY += 5;
-    doc.setFont('helvetica', 'normal');
-    guides.forEach(g => {
-      doc.text(`${g.first_name} ${g.last_name}`, rightAlignX, guideY, { align: 'right' });
-      guideY += 5;
-    });
-
-    currentY += 15;
-
-    // Trip Title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    const title = trip.tripType === 'single-day' 
-      ? `Program izleta: ${trip.tripName} (${this.formatDate(trip.tripDate!)})`
-      : `Program izleta: ${trip.tripName} (${this.formatDate(trip.startDate!)} - ${this.formatDate(trip.endDate!)})`;
-    
-    // Center title
-    const titleLines = doc.splitTextToSize(title, pageWidth - (margin * 2));
-    doc.text(titleLines, pageWidth / 2, currentY, { align: 'center' });
-    currentY += (titleLines.length * 8) + 5;
-
-    // Content Section Helper
-    const addSection = (label: string, value: string) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text(`${label}: `, margin, currentY);
-      const labelWidth = doc.getTextWidth(`${label}: `);
-      doc.setFont('helvetica', 'normal');
-      const textValue = doc.splitTextToSize(value || '-', pageWidth - margin * 2 - labelWidth);
-      doc.text(textValue, margin + labelWidth, currentY);
-      currentY += (textValue.length * 6) + 2;
-    };
-
-    addSection('Cijena', `Članovi: ${trip.memberPrice}€, Ostali: ${trip.nonMemberPrice}€`);
-    addSection('Zahtjevnost', `Kondicijska: ${trip.fitnessDifficulty}, Tehnička: ${trip.technicalDifficulty}`);
-    addSection('Polazak', trip.departure);
-    addSection('Prijevoz', trip.transport);
-    
-    currentY += 5;
-
-    // Description
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('OPIS IZLETA:', margin, currentY);
-    currentY += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-
-    if (trip.tripType === 'single-day') {
-      const descLines = doc.splitTextToSize(trip.description || '-', pageWidth - margin * 2);
-      this.checkPageBreak(doc, descLines.length * 6, margin);
-      doc.text(descLines, margin, currentY);
-      currentY += (descLines.length * 6) + 10;
-    } else {
-      trip.dayDescriptions?.forEach((day, index) => {
-        doc.setFont('helvetica', 'bold');
-        const dayHeader = `${index + 1}. DAN (${this.formatDate(day.date)}):`;
-        this.checkPageBreak(doc, 15, margin); // Check space for header + some text
-        doc.text(dayHeader, margin, currentY);
-        currentY += 6;
-        doc.setFont('helvetica', 'normal');
-        const dayLines = doc.splitTextToSize(day.description || '-', pageWidth - margin * 2);
-        doc.text(dayLines, margin, currentY);
-        currentY += (dayLines.length * 6) + 6;
+      const canvas = await html2canvas(container, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
       });
-    }
 
-    addSection('Povratak', trip.returnInfo);
-    
-    if (trip.notes) {
-      currentY += 5;
-      addSection('Napomena', trip.notes);
-    }
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    // Save or Preview
-    window.open(doc.output('bloburl'), '_blank');
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      // If content is very long, we might need multiple pages, but for most flyers one A4 is enough.
+      // For more robust multi-page support in the future, we could split the HTML.
+
+      window.open(pdf.output('bloburl'), '_blank');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      document.body.removeChild(container);
+    }
   }
 
-  private checkPageBreak(doc: jsPDF, neededHeight: number, margin: number) {
-    const pageHeight = doc.internal.pageSize.getHeight();
-    if ((doc as any).currentY + neededHeight > pageHeight - margin) {
-      doc.addPage();
-      (doc as any).currentY = margin;
+  private getTripDateRange(trip: Trip): string {
+    if (trip.tripType === 'single-day') {
+      return this.formatDate(trip.tripDate!);
     }
+    return `${this.formatDate(trip.startDate!)} - ${this.formatDate(trip.endDate!)}`;
+  }
+
+  private renderTripDescription(trip: Trip): string {
+    if (trip.tripType === 'single-day') {
+      return trip.description || '-';
+    }
+    
+    return (trip.dayDescriptions || []).map((day, i) => `
+      <div class="day-prog">
+        <div class="day-title">${i + 1}. DAN (${this.formatWebDay(day.date)}):</div>
+        <div class="day-desc">${day.description || '-'}</div>
+      </div>
+    `).join('');
   }
 
   private formatDate(dateStr: string): string {
@@ -137,21 +174,19 @@ export class PdfService {
     return date.toLocaleDateString('hr-HR');
   }
 
-  private getBase64Image(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.setAttribute('crossOrigin', 'anonymous');
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0);
-        const dataURL = canvas.toDataURL('image/png');
-        resolve(dataURL);
-      };
-      img.onerror = (err) => reject(err);
-      img.src = url;
-    });
+  private formatWebDay(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('hr-HR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  private getFitnessLabel(val: string): string {
+    const map: any = { 'K1': 'Lagano (do 5h hoda)', 'K2': 'Umjereno teško (5-7h hoda)', 'K3': 'Teško (7-9h hoda)', 'K4': 'Vrlo teško (preko 9h hoda)' };
+    return map[val] || val;
+  }
+
+  private getTechnicalLabel(val: string): string {
+    const map: any = { 'T1': 'Nezahtjevno (bez upotrebe ruku)', 'T2': 'Umjereno zahtjevno (povremena upotreba ruku)', 'T3': 'Zahtjevno (uz upotrebu pomagala)', 'T4': 'Vrlo zahtjevno (ozbiljno penjanje)' };
+    return map[val] || val;
   }
 }

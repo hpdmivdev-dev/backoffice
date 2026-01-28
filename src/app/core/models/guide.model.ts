@@ -4,5 +4,6 @@ export interface Guide {
   last_name: string;
   category: string;
   email: string;
+  phone?: string;
   active: boolean;
 }
