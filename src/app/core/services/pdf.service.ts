@@ -126,19 +126,47 @@ export class PdfService {
         scale: 2, // Higher quality
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 794 // Approx A4 width in pixels at 96dpi
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       
-      // If content is very long, we might need multiple pages, but for most flyers one A4 is enough.
-      // For more robust multi-page support in the future, we could split the HTML.
+      const margin = 15; // 15mm margins for a premium look
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const innerWidth = pageWidth - (2 * margin);
+      const innerHeight = pageHeight - (2 * margin);
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeightInPdf = (imgProps.height * innerWidth) / imgProps.width;
+
+      let heightLeft = imgHeightInPdf;
+      let position = 0;
+
+      // Helper to "clean" the margins on each page to avoid cut-off content showing in padding areas
+      const maskMargins = () => {
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, pageWidth, margin, 'F'); // Top margin
+        pdf.rect(0, pageHeight - margin, pageWidth, margin, 'F'); // Bottom margin
+        pdf.rect(0, 0, margin, pageHeight, 'F'); // Left margin
+        pdf.rect(pageWidth - margin, 0, margin, pageHeight, 'F'); // Right margin
+      };
+
+      // Add the first page
+      pdf.addImage(imgData, 'JPEG', margin, margin, innerWidth, imgHeightInPdf);
+      maskMargins();
+      heightLeft -= innerHeight;
+
+      // Add subsequent pages if the content overflows
+      while (heightLeft > 0) {
+        position -= innerHeight; // Shift the image up
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', margin, position + margin, innerWidth, imgHeightInPdf);
+        maskMargins();
+        heightLeft -= innerHeight;
+      }
 
       window.open(pdf.output('bloburl'), '_blank');
     } catch (error) {
