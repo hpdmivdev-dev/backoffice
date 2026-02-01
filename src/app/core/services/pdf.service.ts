@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { Trip } from '../models/trip.model';
 import { Guide } from '../models/guide.model';
 
@@ -12,6 +10,15 @@ export class PdfService {
   constructor() { }
 
   async generateTripPdf(trip: Trip, guides: Guide[]): Promise<void> {
+    // Dynamically load heavy libraries to reduce initial bundle size
+    const [jsPDFModule, html2canvasModule] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas')
+    ]);
+
+    const jsPDF = jsPDFModule.default;
+    const html2canvas = html2canvasModule.default;
+
     // Create a hidden container for the PDF content to ensure 100% correct font rendering
     const container = document.createElement('div');
     container.style.position = 'absolute';
